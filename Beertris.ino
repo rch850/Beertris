@@ -262,20 +262,40 @@ void GameOver() {
 //========================================================================
 void ClearKeys() { but_A=false; but_LEFT=false; but_RIGHT=false;}
 //========================================================================
+int mabiki = 0;
 bool KeyPadLoop(){
-  if(M5.BtnA.wasPressed()){ClearKeys();but_LEFT =true;return true;}
-  if(M5.BtnB.wasPressed()){ClearKeys();but_RIGHT=true;return true;}
+  // if(M5.BtnA.wasPressed()){ClearKeys();but_LEFT =true;return true;}
+  // if(M5.BtnB.wasPressed()){ClearKeys();but_RIGHT=true;return true;}
   if(M5.BtnC.wasPressed()){ClearKeys();but_A    =true;return true;}
+  mabiki++;
+  if (mabiki % 10 == 0) {
+    if (IMU.pitch <= -20) {
+      ClearKeys();
+      but_LEFT = true;
+      return true;
+    }
+    if (IMU.pitch >= 20) {
+      ClearKeys();
+      but_RIGHT = true;
+      return true;
+    }
+    if (IMU.roll < 10) {
+      ClearKeys();
+      but_A = true;
+      return true;
+    }
+  }
   return false;
 }
 //========================================================================
 void GetNextPosRot(Point* pnext_pos, int* pnext_rot) {
   bool received = KeyPadLoop();
+  bool drop = IMU.roll >= 40;
   if (but_A) started = true;
   if (!started) return;
   pnext_pos->X = pos.X;
   pnext_pos->Y = pos.Y;
-  if ((fall_cnt = (fall_cnt + 1) % 10) == 0) pnext_pos->Y += 1;
+  if (drop || (fall_cnt = (fall_cnt + 1) % 10) == 0) pnext_pos->Y += 1;
   else if (received) {
     if (but_LEFT) { but_LEFT = false; pnext_pos->X -= 1;}
     else if (but_RIGHT) { but_RIGHT = false; pnext_pos->X += 1;}
@@ -291,6 +311,9 @@ void DeleteLine() {
     for (int i = 0; i < Width; ++i) if (screen[i][j] == 0) Delete = false;
     if (Delete) for (int k = j; k >= 1; --k) 
     for (int i = 0; i < Width; ++i) screen[i][k] = screen[i][k - 1];
+    if (Delete) {
+      M5.Speaker.tone(440, 200);
+    }
   }
 }
 //========================================================================
